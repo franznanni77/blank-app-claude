@@ -1,18 +1,5 @@
 import streamlit as st
 from anthropic import Anthropic
-import json
-
-def initialize_anthropic():
-    """Inizializza il client Anthropic con la chiave API."""
-    # Ottieni la chiave API da Streamlit Secrets o input utente
-   
-
-        anthropic_api_key = st.secrets.get("ANTHROPIC_API_KEY", "")
-anthropic = Anthropic(api_key=anthropic_api_key)
-    
-    if st.session_state.anthropic_api_key:
-        return Anthropic(api_key=st.session_state.anthropic_api_key)
-    return None
 
 def send_message_to_claude(client, message, system_prompt=None):
     """Invia un messaggio a Claude e riceve la risposta."""
@@ -42,10 +29,10 @@ def send_message_to_claude(client, message, system_prompt=None):
 def main():
     st.title("Interfaccia Claude API")
     
-    # Inizializza il client Anthropic
-    client = initialize_anthropic()
-    
-    if client:
+    try:
+        # Inizializza il client Anthropic usando Streamlit secrets
+        client = Anthropic(api_key=st.secrets["anthropic_api_key"])
+        
         # Area per il system prompt (opzionale)
         with st.expander("Impostazioni avanzate"):
             system_prompt = st.text_area(
@@ -63,15 +50,16 @@ def main():
                     response = send_message_to_claude(client, user_message, system_prompt)
                     st.markdown("### Risposta di Claude:")
                     st.markdown(response)
+                    
+                    # Aggiorna la cronologia
+                    if 'chat_history' not in st.session_state:
+                        st.session_state.chat_history = []
+                    st.session_state.chat_history.append((user_message, response))
             else:
                 st.warning("Inserisci un messaggio prima di inviare.")
         
-        # Aggiungi una sezione per la cronologia delle conversazioni
-        if 'chat_history' not in st.session_state:
-            st.session_state.chat_history = []
-        
         # Mostra la cronologia delle conversazioni
-        if st.session_state.chat_history:
+        if 'chat_history' in st.session_state and st.session_state.chat_history:
             st.markdown("### Cronologia conversazioni")
             for i, (msg, resp) in enumerate(st.session_state.chat_history):
                 with st.expander(f"Conversazione {i+1}"):
@@ -80,8 +68,8 @@ def main():
                     st.markdown("**Claude:**")
                     st.markdown(resp)
     
-    else:
-        st.warning("Inserisci una chiave API valida per iniziare.")
+    except Exception as e:
+        st.error(f"Errore: assicurati di aver configurato correttamente la chiave API nelle Streamlit secrets. Dettaglio: {str(e)}")
 
 if __name__ == "__main__":
     main()
