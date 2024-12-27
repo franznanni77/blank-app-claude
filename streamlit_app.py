@@ -5,8 +5,10 @@ import json
 def initialize_anthropic():
     """Inizializza il client Anthropic con la chiave API."""
     # Ottieni la chiave API da Streamlit Secrets o input utente
-    if 'anthropic_api_key' not in st.session_state:
-        st.session_state.anthropic_api_key = st.text_input('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', type='password')
+   
+
+        anthropic_api_key = st.secrets.get("ANTHROPIC_API_KEY", "")
+anthropic = Anthropic(api_key=anthropic_api_key)
     
     if st.session_state.anthropic_api_key:
         return Anthropic(api_key=st.session_state.anthropic_api_key)
